@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="aggregate-values-for-loopFlow" doc:id="e4754cd9-dd44-4da6-86b2-9f2c1134fd5b" >
+		<scheduler doc:name="Run" doc:id="76bd3b15-e1e0-49cb-b42a-22203cc7a577" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="initial Payload" doc:id="0574f485-1d0d-4626-ad94-62668930042b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	name:"Edgar",
+	lastName:"Moran"
+},
+{
+	name:"Erick",
+	lastName:"Torres"
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Array Var Initialize" doc:id="552b9d2b-78aa-4f23-b753-a3ef7d37665a" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="personVar" ><![CDATA[%dw 2.0
+output application/java
+---
+[]//initializing an empty array var]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="Loop over each person element" doc:id="a6302f51-074a-40c2-b4d6-922a22ed2812" >
+			<ee:transform doc:name="Additional person" doc:id="8a851a3e-b0fd-42a4-b9c1-60817f4d016f" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+//You can call a service or merge some data that creates a new object
+payload ++  {iteration: vars.counter} //adding a new field witht he index of the iteration]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<ee:transform doc:name="appending to personVar" doc:id="4bbc92ba-27b8-4a7d-a902-8bf477058226" >
+				<ee:message >
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="personVar" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.personVar + payload // + emulates the .add method to a list adding the current paylaod {name:"Edgar",lastName:"Moran", iteration:0 }]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</foreach>
+		<logger level="INFO" doc:name="Print Result" doc:id="351158cf-025a-4160-9b41-287464c99ca7" message='#[vars.personVar]'/>
+	</flow>
+</mule>

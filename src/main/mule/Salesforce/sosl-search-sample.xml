@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="e5e6f186-b1a2-4a74-bd9f-6959ecc128eb" >
+		<salesforce:basic-connection username="${sfdc.username}" password="${sfdc.password}" securityToken="${sfdc.token}"/>
+	</salesforce:sfdc-config>
+	<flow name="sosl-search-sampleFlow" doc:id="85e3c0e6-ecc6-4c1b-a193-6d23bc785a14" >
+		<scheduler doc:name="Scheduler" doc:id="e1330e6a-290a-4936-81ec-e1c9c62e5cb1" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="Data Setup" doc:id="2e6d584a-8125-42d0-b523-3748d3e42538" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+0 to 10 map {
+	email: "test" ++ $ ++ "@email.com"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Records to Search (Id or Values)" doc:id="5af0bdeb-25fc-42e4-8f65-6280a175e76b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+(payload  map {
+  email: "\"" ++ ($.email) ++ "\"" 
+}.email ) joinBy " OR "
+
+//The output should be any value separated by comma ex. "132423" OR "test@email.com"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:search doc:name="SOSL Search over Leads and Contacts" config-ref="Salesforce_Config">
+			<salesforce:search-string ><![CDATA[FIND { :records } IN ALL FIELDS RETURNING Contact(Id,Email), Lead(Id,Email)]]></salesforce:search-string>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	records : payload
+}]]]></salesforce:parameters>
+		</salesforce:search>
+		<ee:transform doc:name="Salesforce Response" doc:id="c220725d-5222-46dd-8579-68d35ab96db2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

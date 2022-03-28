@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<flow name="apex-rest-get-flow" doc:id="75e079e2-ac45-4561-95cf-49aa9ce28b64" >
+		<scheduler doc:name="Scheduler" doc:id="4408584d-dea0-498f-b366-836b9d0489e9" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<salesforce:invoke-apex-rest-method doc:name="Invoke apex rest method" doc:id="d8502b3a-d4c6-48fd-8087-21952887a6a6" config-ref="Salesforce_Config" className="customAccountContact" methodName="getAccountContacts^/customAccountContact^HttpGet^String" doc:description="MethodName^/URLMapping^RequestType^ReturnValue:&#10;getAccountContacts^/customAccountContact^HttpGet^String&#10;&#10;Reference: https://yucelmoran.medium.com/consuming-salesforce-rest-service-sing-mule-4-salesforce-connector-549736bce75e&#10;"/>
+		<logger level="INFO" doc:name="Salesforce REST response" doc:id="ca605441-6484-4337-9155-437a3ceadb66" message="#[payload]"/>
+	</flow>
+	
+	<flow name="apex-rest-post-flow" doc:id="906e44a8-c130-4d53-ba46-6c43aea28874" >
+		<scheduler doc:name="Scheduler" doc:id="f11456cf-180f-43ee-b159-14a62b1fce19" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="POST Request" doc:id="c1a63bc7-5699-4f57-bfcf-3f7c301af22e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	restRequestList:[{
+		First_Name__c: 'Edgar',
+		Description__c: 'Record created from Mululesoft'
+	}]
+}
+
+
+	]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:invoke-apex-rest-method className="ExternalRequestREST" methodName="createExternalRequest^/externalRequest^HttpPost^String" doc:name="Invoke apex rest method" doc:id="d23dfe14-2791-4cc4-876e-7076f399b3ca" doc:description="MethodName^/URLMapping^RequestType^ReturnValue:&#10;getAccountContacts^/customAccountContact^HttpGet^String&#10;&#10;Reference: https://yucelmoran.medium.com/consuming-salesforce-rest-service-sing-mule-4-salesforce-connector-549736bce75e&#10;" config-ref="Salesforce_Config" />
+		<logger level="INFO" doc:name="Salesforce REST response" doc:id="9f678d1a-8794-446f-be21-3f93144845e1" message="#[payload]"/>
+	</flow>
+</mule>

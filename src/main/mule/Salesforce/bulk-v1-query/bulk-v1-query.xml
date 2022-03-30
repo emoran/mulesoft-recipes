@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<flow name="createBulkJob" doc:id="f532f287-c819-42ac-8fc1-b0380bc0968c" >
+		<scheduler doc:name="Scheduler" doc:id="d3ba6dd4-6a3e-4ea7-84e6-dc8c008ff2d0" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="Job Create Request" doc:id="aaaacd3f-af50-4491-bc8c-48e040123e68" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+    "contentType" : "CSV",
+    "concurrencyMode": "Parallel"  //Serial or Parallel
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create-job operation="query" type='#["Case"]' doc:name="Create job" doc:id="cd93522e-aa37-44e9-b742-3dd5b1339560" config-ref="Salesforce_Config" >
+			<salesforce:create-job-request ><![CDATA[#[payload]]]></salesforce:create-job-request>
+		</salesforce:create-job>
+		<set-variable value="#[payload.Id]" doc:name="Job ID" doc:id="f004a16d-9d9e-4933-95f8-cd89585ddb4a" variableName="jobId"/>
+		<salesforce:create-batch-for-query doc:name="Create batch for query" doc:id="908ace3c-5a3b-48b4-bdd6-10d095a32c13" config-ref="Salesforce_Config" jobInfoBatchForQuery="#[payload]" >
+			<salesforce:batch-query ><![CDATA[#["Select Id,CaseNumber,CreatedDate from Case limit 50000"]]]></salesforce:batch-query>
+			<salesforce:headers >
+				<salesforce:header key="Sforce-Enable-PKChunking" value="TRUE" />
+				<salesforce:header key="chunkSize" value="50000" />
+			</salesforce:headers>
+		</salesforce:create-batch-for-query>
+		<salesforce:batch-info-list doc:name="Batch info list" doc:id="bb72b058-9efa-41ae-af69-ac60c8889573" config-ref="Salesforce_Config" jobId="#[vars.jobId]"/>
+		<flow-ref doc:name="CheckJobStatus" doc:id="aaadd7c2-132e-4bf6-a84b-b7bdf2d430f3" name="CheckJobStatus"/>
+		<ee:transform doc:name="Convert Back to CSV" doc:id="d23365ea-3433-4ecf-8c34-f3a097e139b7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv quoteValues=true, encoding="UTF-8", escape="\\"
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="abad4acc-bf17-48fb-ac51-b58da526bbc4" message="You can work with the data as object or maybe save the file in a diretory (based on your use case.)"/>
+		<flow-ref doc:name="closeJobFlow" doc:id="7d18197e-dce0-4902-b2a3-63c7b2648bf7" name="closeJobFlow"/>
+	</flow>
+	
+	<sub-flow name="CheckJobStatus" doc:id="6127d311-124e-45ea-892d-9923773fa766" >
+		<until-successful maxRetries="40" doc:name="Until Successful" doc:id="bceb4730-286b-432b-b085-94e99d466eed" millisBetweenRetries="10000">
+			<try doc:name="Try" doc:id="13829be5-514b-4749-bb14-990b66fec954" >
+				<salesforce:batch-info doc:name="Batch info" doc:id="cd53bfdf-1c9d-4925-b767-34c7a28fe672" config-ref="Salesforce_Config">
+					<salesforce:batch-to-retrieve ><![CDATA[#[payload[0]]]]></salesforce:batch-to-retrieve>
+				</salesforce:batch-info>
+				<set-variable value="#[payload.state]" doc:name="Set jobStatus" doc:id="03c747db-7fb1-49af-8ba4-29c3f7473522" variableName="jobStatus" />
+				<choice doc:name="is status Completed ?" doc:id="3ffe3281-dc0d-4ee4-a1e5-7f9af7e10fda">
+							<when expression='#[payload.state != "Completed"]'>
+						<raise-error doc:name="Raise error" doc:id="2a360ca4-497a-4ea9-8f58-e94250431151" type="PRECONDITIONS:NOT_COMPLETED" description="Job not completed"/>
+							</when>
+							<otherwise>
+								<logger level="INFO" doc:name="Logger" doc:id="b4de49c1-4b2f-44a7-b71b-cfa0ab6be6a0" message="#[vars.jobStatus]" />
+							</otherwise>
+						</choice>
+				<error-handler >
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b6157868-b4c8-4e32-b10a-8e69a30c1233" >
+						<logger level="INFO" doc:name="Not Completed" doc:id="987f7130-9988-4a44-9f57-d62fa57b38ba" message="Not completed trying again"/>
+					</on-error-propagate>
+				</error-handler>
+			</try>
+		</until-successful>
+		<salesforce:query-result-stream doc:name="Query result stream" doc:id="933ca03b-21c0-4060-9e07-b7d4d7638e99" config-ref="Salesforce_Config" contentType="CSV" outputMimeType="application/csv" outputEncoding="UTF-8"/>
+		<ee:transform doc:name="payload as java if you need to work with the payload" doc:id="cd15e88f-c8bc-409b-ab2b-7849900df57a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java 
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Total records" doc:id="acc5486e-7c42-45a9-84d3-05c56294bf99" message='#["Total records: " ++ sizeOf(payload)]'/>
+	</sub-flow>
+	<flow name="closeJobFlow" doc:id="a1dcfe06-7de7-425a-a1e3-a2b1f4eeecdf" >
+		<salesforce:close-job doc:name="Close job" doc:id="bb59bc76-a52a-40c6-914a-a4422f0fd165" config-ref="Salesforce_Config" jobId="#[vars.jobId]"/>
+	</flow>
+</mule>

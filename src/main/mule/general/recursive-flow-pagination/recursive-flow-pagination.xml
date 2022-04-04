@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="8b35aa32-0e28-4ee4-b6c1-b4878b657704" responseTimeout="60000">
+		<http:request-connection protocol="HTTPS" host="api.instantwebtools.net" port="443" />
+	</http:request-config>
+	<vm:config name="VM_Config" doc:name="VM Config" doc:id="10ca857b-5680-4fbe-9890-36f31ba4ecda" >
+		<vm:queues >
+			<vm:queue queueName="recursive" />
+		</vm:queues>
+	</vm:config>
+	<flow name="sync-flow" doc:id="bf961802-b0e5-4255-9ee5-cf4cbc8b7fa4" >
+		<scheduler doc:name="Scheduler" doc:id="b21201a3-1074-4e1f-9cb3-9f4ae45ec8cb" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="recursive-flow-pagination" doc:id="b8fc2874-7226-4eea-a1f7-6e68156bdfb1" name="recursive-flow-pagination"/>
+	</flow>
+	<flow name="recursive-flow-pagination" doc:id="886c7ba8-28fd-4a87-af41-d316616ac3b5" >
+		<vm:listener queueName="recursive" doc:name="Listener" doc:id="2c764060-9070-47c6-b730-2d81a71880e8" config-ref="VM_Config"/>
+		<ee:transform doc:name="Initial Array" doc:id="d30c8490-df3b-45f1-b10d-9b442608b2d4" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="apiRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+//Check if the variable is null then initializes as empty array
+//otherwise we set it with the data it already contains.
+if (payload.apiRecords != null) payload.apiRecords else []  ]]></ee:set-variable>
+				<ee:set-variable variableName="page" ><![CDATA[%dw 2.0
+output application/java
+---
+if (payload.page != null) payload.page else 1]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Current Page" doc:id="7cf5a15e-7a7a-4f85-af33-311d65550910" message='#["Page: " ++ vars.page]'/>
+		<http:request method="GET" doc:name="Public Passenger API (GET)" doc:id="cc8d7928-c9a1-4eb5-a939-642c0427db26" config-ref="HTTP_Request_configuration" path="/v1/passenger">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"page" : vars.page,
+	"size": "2000"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="total Pages" doc:id="211211a6-5d82-4543-b018-4ae6c9276219" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="totalPages" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.totalPages]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Check total pages vs current" doc:id="c5bee1ba-6f62-48fd-821a-4ac4c3b2fb08" >
+			<when expression="#[vars.page &lt; vars.totalPages]">
+				<set-variable value="#[vars.page + 1]" doc:name="Increase Page" doc:id="fba347e0-7154-4637-bea5-cbbbe0498bcf" variableName="page"/>
+				<ee:transform doc:name="Dynamic mapping" doc:id="1ff4f316-2181-4cb7-9f3b-8ae4cf09ad5a">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+(payload.data map $)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<ee:transform doc:name="Aggregate records" doc:id="65583937-4b76-4cfb-b490-cb05dcc0a68b" >
+					<ee:message >
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="apiRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+(vars.apiRecords + payload)]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<ee:transform doc:name="payload for VM" doc:id="a9d0e535-0dd6-43d0-af83-03d8ecb64b42" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	page:vars.page,
+	apiRecords:vars.apiRecords	
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<vm:publish queueName="recursive" doc:name="Publish" doc:id="eeca2a5b-f385-469e-9047-cce89fea24a7" config-ref="VM_Config"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="flatten records" doc:id="01a36c37-8775-43b5-8a00-539cd17d7ef2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+flatten (vars.apiRecords)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="49e8e5b0-3c53-4c9d-864b-243cfb33b880" message='#["Total records: " ++ sizeOf(payload)]'/>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

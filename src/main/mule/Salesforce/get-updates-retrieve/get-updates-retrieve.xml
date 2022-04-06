@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-updates-retrieveFlow" doc:id="200ae51e-f6b6-4076-818d-eb65caeccced" >
+		<scheduler doc:name="Scheduler" doc:id="dc18e64a-9bb7-4e4b-b512-d75b6c05d2e0" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Period" doc:id="beb426f6-75a0-4f97-b9eb-f693008e5f4f" message="#[import * from dw::core::Periods&#10;---&#10;&quot;Pulling updates FROM: &quot; ++ ((now() - |P10D| &gt;&gt; &quot;EST&quot;) &#10;	as LocalDateTime {format : &quot;yyyy-MM-dd'T'HH:mm&quot;}&#10;) ++ &quot;TO: &quot; ++ ((now() &gt;&gt; &quot;EST&quot;) as LocalDateTime {format : &quot;yyyy-MM-dd'T'HH:mm&quot;})]"/>
+		<salesforce:get-updated objectType="Account" doc:name="Get updated objects" doc:id="61fab0eb-0c80-4dcd-b8b8-eea295814c83" config-ref="Salesforce_Config" startDate="#[import * from dw::core::Periods&#10;---&#10;((now() - |P10D| &gt;&gt; &quot;EST&quot;) as LocalDateTime {format : &quot;yyyy-MM-dd'T'HH:mm&quot;})]" endDate="#[((now() &gt;&gt; &quot;EST&quot;) as LocalDateTime {format : &quot;yyyy-MM-dd'T'HH:mm&quot;})]"/>
+		<foreach doc:name="Loop over every 2K records" doc:id="ff7812fe-8956-4872-9b9a-f55c3c7efc24" collection="#[payload.ids]" batchSize="2000">
+			<ee:transform doc:name="Retrieve Request: Object IDS and Fields" doc:id="02010927-617c-4e67-ad83-f5db25ab2076" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	fields:["Id","Name","CreatedDate"],
+	ids: payload map $
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<salesforce:retrieve type="Account" doc:name="Retrieve Records" doc:id="36060733-bf64-4c2d-bead-a6fc505244ee" config-ref="Salesforce_Config"/>
+			<ee:transform doc:name="Result Tranformation" doc:id="c18a6266-e74f-4198-a0c4-46197fa0561e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</foreach>
+	</flow>
+</mule>

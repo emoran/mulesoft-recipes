@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="data-setup" doc:id="ac193407-9643-46e6-90c5-6f4556c1eef3" >
+		<scheduler doc:name="Scheduler" doc:id="1bee458f-8d0a-4591-aae0-71d413b96982" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="Original People Payload" doc:id="d0f542ac-65ea-46e0-ae6d-889e7e9e918e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[
+    {
+    	"id":"1111",
+        "name": "Michael",
+        "age": 34
+    },
+    {
+    	"id":"2222",
+        "name": "Andy",
+        "age": 30
+    },
+    {
+    	"id":"3333",
+        "name": "Justin",
+        "age": 19
+    },
+    {
+    	"id":"4444",
+        "name": "Alan",
+        "age": 34
+    },
+    {
+    	"id":"5555",
+        "name": "Timmy",
+        "age": 30
+    },
+    {
+    	"id":"6666",
+        "name": "Mark",
+        "age": 19
+    }
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Existing People in System" doc:id="0d8fc73e-f0e1-4e31-ad10-6aeb49c9e4a2" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="exisitngRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+[
+	{
+    	"id":"4444",
+        "name": "Alan",
+        "age": 34
+    },
+    {
+    	"id":"5555",
+        "name": "Timmy",
+        "age": 30
+    },
+    {
+    	"id":"6666",
+        "name": "Mark",
+        "age": 19
+    }
+]]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Filtering Original Array with Existing Data" doc:id="8bb11a88-6f4b-4a2f-9655-b8fd6126a2b0" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="peopleWithMatch" ><![CDATA[%dw 2.0
+output application/java
+---
+//We collect the records that matches based on the Id from the origninal payload and 
+//the existing data (This can be data you want to update)
+(payload filter (vars.exisitngRecords.id contains ($.id)) map (record,indexOfrecord)->{
+	(record),
+	status:"Active" //just an additional attribute
+})]]></ee:set-variable>
+				<ee:set-variable variableName="peopleWithNoMatch" ><![CDATA[%dw 2.0
+output application/java
+---
+//We filter the original payload and we remove the records thet doesn't match
+//So in this case these records can be the ones we need top create
+payload filter (not (vars.exisitngRecords.id contains ($.id))) map $]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+	</flow>
+</mule>

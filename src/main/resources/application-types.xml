@@ -71,4 +71,6 @@ type: number]]></types:shape>
       </types:output-event>
     </types:processor-declaration>
   </types:enrichment>
+  <types:enrichment select="#0d8fc73e-f0e1-4e31-ad10-6aeb49c9e4a2"/>
+  <types:enrichment select="#8bb11a88-6f4b-4a2f-9655-b8fd6126a2b0"/>
 </types:mule>

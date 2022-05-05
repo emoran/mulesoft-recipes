@@ -18,7 +18,8 @@ Important points:
 So this is usefull if you want to have a way to show some data result on the UI for a customer, or maybe to track a process and put a chart, you name it.
 
 Here how the data looks from the Mule endpoint:
-![data](https://user-images.githubusercontent.com/1028534/166938211-be0e6e58-7dcc-4c70-9f5a-d24cb88c42c9.png)
+![data](https://user-images.githubusercontent.com/1028534/166942102-5a8e571a-7864-4260-aee8-645389f5e817.png)
+
 
 And this is the final result:
 ![finalResult](https://user-images.githubusercontent.com/1028534/166938247-0f125244-eda7-4dee-9172-92c1ba0f1191.png)

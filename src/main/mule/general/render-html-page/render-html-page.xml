@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="93892276-b47f-4039-8c18-b2d17af5fbe5" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="72e2148d-1dc4-4666-abd5-fa3ec9ff320f" >
+		<http:request-connection protocol="HTTPS" host="datausa.io" />
+	</http:request-config>
+	<flow name="render-html-pageFlow" doc:id="32c52a9f-4a89-4573-8923-431be84c996d" >
+		<http:listener doc:name="Listener" doc:id="cf2f93b2-eeb1-4787-9585-ba5a2875144c" config-ref="HTTP_Listener_config" path="/*"/>
+		<http:load-static-resource doc:name="Load static resource" doc:id="3a1c0b49-d09a-41c0-83df-9adc8cfb1c91" resourceBasePath="${mule.home}/apps/${app.name}/web/"/>
+	</flow>
+	<flow name="render-html-pageFlow1" doc:id="9ac47fc5-ed7a-46f0-b669-7de6b8542ea3" >
+		<http:listener doc:name="Listener" doc:id="ed2646bb-fd19-4182-b156-6d91d7ba85df" config-ref="HTTP_Listener_config" path="/data"/>
+		<http:request method="GET" doc:name="Population REST API" doc:id="9284c0a4-7710-4b06-a4d3-2412aa09d6e3" config-ref="HTTP_Request_configuration1" path="/api/data">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	drilldowns : "Nation",
+	measures: "Population"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Response" doc:id="b404ef2d-89b8-4672-95b0-462c336133ac" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

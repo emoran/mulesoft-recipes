@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+   <head>
+      <!--Adding SLDS Salesforce styles and Datatable-->
+      <link rel="stylesheet" href="lds/styles/salesforce-lightning-design-system.min.css" />
+      <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css"/>
+   </head>
+   <body>
+      <article class="slds-card">
+         <div class="slds-card__header slds-grid">
+            <header class="slds-media slds-media_center slds-has-flexi-truncate">
+               <div class="slds-media__figure">
+                  <span class="slds-icon_container slds-icon-standard-account" title="account">
+                     <svg class="slds-icon slds-icon_small" aria-hidden="true">
+                     </svg>
+                     <span class="slds-assistive-text">Data</span>
+                  </span>
+               </div>
+               <div class="slds-media__body">
+                  <h2 class="slds-card__header-title">
+                     <a href="#" class="slds-card__header-link slds-truncate" title="Accounts">
+                     <span>Accounts</span>
+                     </a>
+                  </h2>
+               </div>
+               <div class="slds-no-flex">
+                  <button class="slds-button slds-button_neutral">New</button>
+               </div>
+            </header>
+         </div>
+         <div class="slds-card__body slds-card__body_inner">
+             <!--Adding the table we need to fill with data-->
+            <table id="data" class="display" width="100%"></table>
+         </div>
+         <footer class="slds-card__footer">
+            <a class="slds-card__footer-action" href="#">View All
+            <span class="slds-assistive-text">Accounts</span>
+            </a>
+         </footer>
+      </article>
+   </body>
+    <!--Scripts for JQUERY and DataTables-->
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+   <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+   <script>
+      $(document).ready(function(){
+         getData();
+      });
+      
+      function getData(){	
+         console.log('Sending request.');
+         
+         //GET request to the Mulesoft API endpoint
+         $.ajax({
+            type       : "GET",
+            url        : "/data",
+            timeout    : 600000,
+            headers             : { 
+               'Accept'        : 'application/json',
+               'Content-Type'  : 'application/json' 
+            },
+            dataType : "json",
+            success : function (data) {
+
+                //When success we populate the table with the JSON data.
+               $('#data').DataTable({
+                  "data": data.data,
+                  "columns": [
+                     { "data": "ID Nation" },
+                     { "data": "Nation" },
+                     { "data": "ID Year" },
+                     { "data": "Year" },
+                     { "data": "Population" },
+                     { "data": "Slug Nation" }
+                  ]
+               }); 
+            },
+            error: function (e) {
+               console.log(e.responseText);
+               console.log("ERROR : ", e);
+            }
+         });
+      }
+   </script>
+</html>

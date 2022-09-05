@@ -9,6 +9,7 @@ control what we want to show.
 
 The HTML template can be located under src/main/resources/<YourFolder>/your_template.html. 
 
+<img width="232" alt="tree" src="https://user-images.githubusercontent.com/1028534/188485012-e6bd6cff-b6f6-4271-82cc-03e3aef0dc60.png">
 
 
 Inside the html code, after we setup the design we should be able to implement DataWeave scripting to allow run 
@@ -73,6 +74,14 @@ output application/json
 </mule>
 
 ```
+<img width="482" alt="flow" src="https://user-images.githubusercontent.com/1028534/188485076-5d349763-9149-4ba6-993d-97babfe045a8.png">
+
+
+	And finally the email will look like:
+	
+<img width="617" alt="email" src="https://user-images.githubusercontent.com/1028534/188485235-9b5b3a36-0670-443a-aabb-4348ff194e40.png">
+
+	
 ## Documentation
 
 [Parse Template Documentation](https://docs.mulesoft.com/mule-runtime/4.4/parse-template-reference)

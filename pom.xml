@@ -69,14 +69,14 @@
 		</dependency>
 		<dependency>
 			<groupId>com.mulesoft.connectors</groupId>
-			<artifactId>mule-salesforce-connector</artifactId>
-			<version>10.15.4</version>
+			<artifactId>mule-twilio-connector</artifactId>
+			<version>4.2.5</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
 			<groupId>com.mulesoft.connectors</groupId>
-			<artifactId>mule-twilio-connector</artifactId>
-			<version>4.2.5</version>
+			<artifactId>mule-salesforce-connector</artifactId>
+			<version>10.15.5</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 	</dependencies>

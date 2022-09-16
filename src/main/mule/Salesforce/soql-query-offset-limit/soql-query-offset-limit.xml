@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="soql-query-offset-limitFlow" doc:id="da23f332-5f5c-462b-9581-bc4d930efd5e" >
+		<http:listener doc:name="Listener" doc:id="af976f68-e45b-4d9c-80ef-9936b8e3f089" config-ref="HTTP_Listener_config" path="/soql-offset/query"/>
+		<salesforce:query doc:name="Query Cases" doc:id="0ea2b5cd-4563-4d31-bf28-0baf07b9d8e6" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id,Name,createdDate FROM Account  ORDER BY :orderBy :sortOrder LIMIT :limit OFFSET :offset]]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"orderBy" : attributes.queryParams.sortby default "createdDate",
+	"sortOrder": attributes.queryParams.sortOrder default "DESC",
+	"limit": attributes.queryParams.limit default "20",
+	"offset": attributes.queryParams.offset default "0"
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Transform Message" doc:id="d3b70904-d23e-41fa-aab1-429e1c9a1607" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+
+
+
+
+
+
+
+
+	</flow>
+</mule>

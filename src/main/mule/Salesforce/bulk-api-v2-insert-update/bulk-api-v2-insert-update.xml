@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	
+	<flow name="sfdcFlow" doc:id="8592076a-07d0-40ea-bf64-25daa93d8d84" >
+		<scheduler doc:name="Scheduler" doc:id="e9b66cb1-d15e-4e76-9317-613506f9b47d" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform doc:name="Sample Data" doc:id="7627d76e-38c1-4159-ba58-d2e30de2fa14" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+[
+	{
+	  "Status": "Open",
+	  "Company": "companyTest1",
+	  "LeadSource": "Internet",
+	  "Country": "United States",
+	  "LastName": "Smith",
+	  "FirstName": "John"
+	}, 
+	{
+	  "Status": "Open",
+	  "Company": "companyTest2",
+	  "LeadSource": "Phone",
+	  "Country": "United States",
+	  "LastName": "Test",
+	  "FirstName": "Adam"
+	}
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create-job-bulk-api-v2 doc:name="Create job bulk api v 2" doc:id="6eeafa67-e5b4-4f61-8d2d-2b721440f993" config-ref="Salesforce_Config" objectType="Lead" operation="insert" externalIdFieldName="Id"/>
+		<set-variable value="#[payload.id]" doc:name="Job ID" doc:id="94e1817b-5e7e-4a51-9df1-833af54ef40e" variableName="jobId"/>
+		<flow-ref doc:name="verifyJobState" doc:id="d3aa5924-bee2-4682-ba6f-77afd4b51ab8" name="sfdcFlow1"/>
+		<salesforce:retrieve-job-failed-results-bulk-v2 doc:name="Retrieve job failed results bulk v 2" doc:id="f8e07b20-a9a5-4ad1-8373-8003c105d4da" config-ref="Salesforce_Config" id="#[vars.jobId]" target="failedResults"/>
+		<salesforce:retrieve-job-successful-results-bulk-v2 doc:name="Retrieve job successful results bulk v 2" doc:id="18a34477-f10a-4f27-a8ae-38b6f23876ca" config-ref="Salesforce_Config" id="#[vars.jobId]" target="successResult"/>
+		<ee:transform doc:name="Combine Routes" doc:id="cd5f5709-49c8-40b1-af38-00ef493dbbc3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+(vars.failedResults default []) ++ (vars.successResult default [])]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f34f0b6e-9abc-41ad-882e-7e878711bc90" message="#[payload]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c1bfb1aa-0351-4daa-bf83-dfba45db92c5">
+					<logger level="INFO" doc:name="Logger" doc:id="de541201-b724-4288-912a-4777b0e0b1a6" message="Not completed" />
+				</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="sfdcFlow1" doc:id="204c5deb-6e39-4740-8653-29ee717094a1" >
+		<until-successful maxRetries="5" doc:name="Until Successful" doc:id="516666db-6ee9-453d-9a01-2aaa408b844e" >
+			<try doc:name="Try" doc:id="e646351b-0dfe-4afd-854c-750d9de2f523">
+			<salesforce:get-job-state-bulk-api-v2 doc:name="Get job state bulk api v 2" doc:id="2d4efd4c-929d-44d1-aa93-fb5a8f72019d" config-ref="Salesforce_Config" id="#[vars.jobId]" />
+			<choice doc:name="Is Completed?" doc:id="15d49718-e636-4377-9811-679cb90f6555">
+			<when expression='#[payload.state == "JobComplete"]'>
+				<logger level="INFO" doc:name="Logger" doc:id="a07e31ee-bfe0-4e1c-88f4-6263110708ac" message="Job Completed" />
+			</when>
+				<otherwise>
+					<logger level="INFO" doc:name="Logger" doc:id="dd879369-c143-4140-8f79-b68c1decb7c6" />
+					<raise-error doc:name="Raise error" doc:id="194d576b-5c22-4b4d-94a1-ff75ed7fc3b5" type="MULE:EXPRESSION" description="Batch is not completed in Salesforce" />
+			</otherwise>
+		</choice>
+			<error-handler>
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6f16d79d-1b26-46ff-9400-7e0ba42c5bd9">
+					<logger level="INFO" doc:name="Logger" doc:id="89b66ae4-0275-424b-b8e9-b2cfbca5dcf4" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		</until-successful>
+	</flow>
+</mule>

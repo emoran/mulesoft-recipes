@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	
+<flow name="post:\file:multipart\form-data:orgx-system-api-config">
+        <http:listener doc:name="Listener" doc:id="7a33f5a7-fa70-4917-b621-c619107b7bc1" config-ref="HTTP_Listener_config" path="/salesforce-content-document"/>
+		<set-variable value='#["0018c00002KEfAdAAL"]' doc:name="sfdcRecordId" doc:id="a2cd247b-3c18-4d36-b699-0d7c67fd8d2e" variableName="sfdcRecordId" />
+		<ee:transform doc:name="Request to Content Document" doc:id="cc3b4219-e6f7-4dc8-ac5f-d001f80b8609">
+                <ee:message>
+                    <ee:set-payload resource="dw/request-contentDocument.dwl" />
+                </ee:message>
+            </ee:transform>
+		<salesforce:upsert objectType="ContentVersion" externalIdFieldName="Id" doc:name="Upload File" doc:id="0bc5b584-c6eb-4866-a4f5-416ca8c5f006" config-ref="Salesforce_Config" target="upsertResponse" />
+		<salesforce:query doc:name="Get Content Document Id" doc:id="50de1a26-9af7-470e-ba19-e1497b87e0fc" config-ref="Salesforce_Config" target="queryResponse">
+                <salesforce:salesforce-query><![CDATA[SELECT Id,ContentDocumentId FROM ContentVersion WHERE Id = ':cvId']]></salesforce:salesforce-query>
+                <salesforce:parameters><![CDATA[#[output application/java
+---
+{
+	"cvId" : vars.upsertResponse.items[0].id
+}]]]></salesforce:parameters>
+            </salesforce:query>
+		<ee:transform doc:name="Map Document Link" doc:id="329e3ca6-5c30-4488-bfb1-8ebefc27eb25">
+                <ee:message>
+                    <ee:set-payload resource="dw/map-document-link.dwl" />
+                </ee:message>
+            </ee:transform>
+		<salesforce:upsert objectType="ContentDocumentLink" externalIdFieldName="Id" doc:name="Create Content Document Link" doc:id="5615f1b8-283a-40cd-97ca-5442b0e8f0b0" config-ref="Salesforce_Config" target="createLinkResponse" />
+		<ee:transform doc:name="Response" doc:id="51c46293-b548-4fcb-b0eb-575a58a67786">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+    </flow>
+
+</mule>

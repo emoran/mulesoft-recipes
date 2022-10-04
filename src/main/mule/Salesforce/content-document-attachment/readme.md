@@ -6,6 +6,7 @@ This sample demonstrates how we can upload a Content Document file and link the 
 Imagine you need to use an endpoint (just like this sample) where you use multipart-form/data content type and you grab 
 the file and get it uploaded and linked. you can do it with this steps:
 
+![Screen Shot 2022-10-04 at 3 46 10 PM](https://user-images.githubusercontent.com/1028534/193911689-35a4a024-7133-42b7-8fb4-74c318a216ed.png)
 
 
 

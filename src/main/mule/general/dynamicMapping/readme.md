@@ -83,4 +83,11 @@ output application/java
 ```
 In the end your flow will look like this:
 
+![Screen Shot 2022-10-17 at 6 44 01 PM](https://user-images.githubusercontent.com/1028534/196297684-f93b0168-a3f7-45ac-93b7-5392d277e376.png)
+
+
 And after the mapping the records are matched and ready to be send to the taraget system:
+
+![Screen Shot 2022-10-17 at 6 46 01 PM](https://user-images.githubusercontent.com/1028534/196297691-04d6f4d0-ef8c-47dc-908e-9d721d59d1dd.png)
+
+

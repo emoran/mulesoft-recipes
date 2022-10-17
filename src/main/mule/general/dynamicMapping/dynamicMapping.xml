@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="dynamicMappingFlow" doc:id="82f241f3-6915-40f3-857f-12716b368420" >
+		<scheduler doc:name="Scheduler" doc:id="84309d17-544f-444b-b924-9f2a4827476e" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<file:read doc:name="Read CSV fille" doc:id="8e8d8177-1637-4c2a-a287-febf27c6585c" path="/Users/emoran/Desktop/campaigns.csv"/>
+		<ee:transform doc:name="Load Resource Mapping File" doc:id="e9cdb29d-faa9-47e9-a21b-6d6bc8801f5b" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="campaignMapping" ><![CDATA[%dw 2.0
+output application/java  
+---
+readUrl('classpath://dynamicMapping/dynamicMappingSample.json', 'application/json')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="DynamicMapping" doc:id="11bc763a-a47c-47b3-9037-4b3601fb3c4d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java  
+---
+//Loop over the CSV records
+(payload  map (course, indexOfRecords) -> {
+	
+	//Here we loop over the mapping we retrieveds from src/main/resources/dynamicMapping folder
+	(vars.campaignMapping.fieldMapping map (campaign, indexOfRecords) -> {
+		//Here we create the field mapping as (System FIeld: Source Field | Name[TO_SALESFORCE]:name[FROM_CSV]))
+		(campaign.targetField): course[campaign.sourceField]
+  	})
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="206b97cf-6131-4d32-b8c0-f9f39fe67485" message='#["Now you can send your data into the system you need"]'/>
+	</flow>
+</mule>

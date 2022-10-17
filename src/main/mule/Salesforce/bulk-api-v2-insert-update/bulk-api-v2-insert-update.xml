@@ -21,7 +21,6 @@ output application/csv
 [
 	{
 	  "Status": "Open",
-	  "Company": "companyTest1",
 	  "LeadSource": "Internet",
 	  "Country": "United States",
 	  "LastName": "Smith",

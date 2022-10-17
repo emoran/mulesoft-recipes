@@ -1,0 +1,22 @@
+{
+  "entity": "Campaign",
+  "externalId": "externalCampaignId__c",
+  "fieldMapping": [
+    {
+      "sourceField": "campaignNumber",
+      "targetField": "externalCampaignId__c"
+    },
+    {
+      "sourceField": "code",
+      "targetField": "Code__c"
+    },
+    {
+      "sourceField": "name",
+      "targetField": "Name"
+    },
+    {
+      "sourceField": "custom_c",
+      "targetField": "Description"
+    }
+  ]
+}

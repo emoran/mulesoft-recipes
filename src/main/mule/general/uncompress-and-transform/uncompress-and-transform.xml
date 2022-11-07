@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="uncompress-and-transformFlow" doc:id="4dc6af70-52f5-4448-8241-8def431a1911" >
+		<scheduler doc:name="Scheduler" doc:id="3ca613ec-a7c3-448a-9890-f24f90274ac2" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<file:read doc:name="Read compresed file" doc:id="de7c673d-e8b0-4234-a89e-380c8a38b950" path="/Users/emoran/Desktop/images.zip"/>
+		<compression:extract doc:name="Extract" doc:id="928f61fb-468a-4433-a270-fbe7ae318f28" >
+			<compression:extractor >
+				<compression:zip-extractor />
+			</compression:extractor>
+		</compression:extract>
+		<foreach doc:name="For Each" doc:id="f5377878-318e-4ff1-9c10-4c9b4eb75f0b" >
+			<ee:transform doc:name="Transform Message" doc:id="3cd3eb41-bd2d-4d8b-8959-cb6e36d353a6">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="124ddaae-d61e-4392-b0b1-82e6c6ff7b41" />
+		</foreach>
+	</flow>
+</mule>

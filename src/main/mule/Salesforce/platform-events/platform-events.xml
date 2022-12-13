@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="platform-eventsFlow" doc:id="3e53b9ef-e558-4e2f-9c3a-49c280bcf331" >
+		<http:listener doc:name="Listener" doc:id="c7d2ec76-060a-4600-9e52-f005cea806a8" config-ref="HTTP_Listener_config" path="/platform-event"/>
+		<ee:transform doc:name="Mapping Request to Java" doc:id="e5b18e00-5673-4625-83e8-15baa8350834" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:publish-platform-event-message doc:name="Publish platform event message" doc:id="474d4233-9f77-418c-9f37-ecd7460773d0" config-ref="Salesforce_Config" platformEventName="New_Accounts__e"/>
+		<ee:transform doc:name="Response" doc:id="d0cfa19c-0ece-4b19-bb4b-f978f8c89ae0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

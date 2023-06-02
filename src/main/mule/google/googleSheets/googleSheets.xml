@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:google-sheets="http://www.mulesoft.org/schema/mule/google-sheets"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/google-sheets http://www.mulesoft.org/schema/mule/google-sheets/current/mule-google-sheets.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<google-sheets:config name="Google_Sheets_Config" doc:name="Google Sheets Config" doc:id="fd740631-7f68-489d-8229-871e38169056" >
+		<google-sheets:oauth-2-0-connection >
+			<google-sheets:oauth-authorization-code consumerKey="${google.consumerKey}" consumerSecret="${google.consumerSecret}" />
+			<google-sheets:oauth-callback-config listenerConfig="HTTP_Listener_config" callbackPath="/callback" authorizePath="/authorize" externalCallbackUrl="http://localhost:8081/callback" />
+		</google-sheets:oauth-2-0-connection>
+	</google-sheets:config>
+	<flow name="googleSheetsFlow" doc:id="8833928a-1fc7-47a6-a0c1-11237f86fc42" >
+		<scheduler doc:name="Scheduler" doc:id="2144067c-ceb5-4fb4-95c7-dc8dddf48071" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<google-sheets:get-spreadsheets-values-by-spreadsheet-id-range doc:name="Get Spreadsheets Values" doc:id="5d372bab-8f2c-4f16-9efd-fe909ff9723d" config-ref="Google_Sheets_Config" spreadsheetId="15sYut3uPQn8h4mNOgNMCQjJAYIiDE0eMWID2xWBINwE" range="My%20cool%20tab!A10:E40"/>
+		<ee:transform doc:name="Mapping headera and values" doc:id="2d306b5d-1e13-4868-92ee-dad1db9efed8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var headers = payload.values[0] //collects headers
+---
+(payload.values map(record,index)-> {
+    (headers map (header,index)->{
+        (header):record[index]
+    })
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="140d817a-f5f6-491a-8406-575f4a6d34c4" />
+	</flow>
+</mule>

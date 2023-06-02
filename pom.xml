@@ -14,7 +14,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
 		<app.runtime>4.4.0-20211227</app.runtime>
-		<mule.maven.plugin.version>3.8.0</mule.maven.plugin.version>
+		<mule.maven.plugin.version>3.8.2</mule.maven.plugin.version>
 	</properties>
 
 	<build>
@@ -95,6 +95,12 @@
 			<groupId>org.mule.modules</groupId>
 			<artifactId>mule-compression-module</artifactId>
 			<version>2.2.1</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>com.mulesoft.connectors</groupId>
+			<artifactId>mule4-google-sheets-connector</artifactId>
+			<version>1.1.10</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 	</dependencies>

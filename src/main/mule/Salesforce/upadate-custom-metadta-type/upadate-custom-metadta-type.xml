@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="cmtFlow" doc:id="695168e4-b5ef-41c1-8502-c70303236105" >
+		<scheduler doc:name="Scheduler" doc:id="a92a41ae-3029-41d6-9e45-c95b69a14789" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="100" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</scheduler>
+		<salesforce:read-metadata type="CustomMetadata" doc:name="Read metadata" doc:id="55f194a9-1b75-4ee3-b166-70f532f2d278" config-ref="Salesforce_Config" >
+			<salesforce:full-names ><![CDATA[#[["Inventory__mdt.JAPAN"]]]]></salesforce:full-names>
+		</salesforce:read-metadata>
+		<ee:transform doc:name="Transform Message" doc:id="69c99041-0b59-47e6-9de6-e961c4a2370c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[{
+	"fullName":"Inventory__mdt.JAPAN",
+	"label":"JAPAN",
+	"values": [{
+		"field":"Sync_Date__c",
+		"value": now()
+	}]
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:update-metadata type="CustomMetadata" doc:name="Update metadata" doc:id="3f8d0e23-8667-4667-869e-69a9863e7fce" config-ref="Salesforce_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="13a5facd-7fc6-4c59-9677-38843889921f" />
+	</flow>
+</mule>

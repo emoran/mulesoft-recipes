@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_0782c1d8_1d8e_4f37_9012_9a8550e7171c_Output_Variables_uniqueEmailCheck = Any
+

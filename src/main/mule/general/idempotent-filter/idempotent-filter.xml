@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="post:\user_register:duplicate-check-config" doc:id="3c0d2ad6-d545-4757-9050-e667347ac6d0" >
+		<http:listener doc:name="Listener" doc:id="0fc4d580-f64e-45f2-9c2b-b13d641f1514" config-ref="HTTP_Listener_config" path="/process" >
+			<http:response statusCode="#[vars.httpStatus default 200]" >
+				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:response>
+			<http:error-response statusCode="#[vars.httpStatus default 500]" >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+				<http:headers ><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+			</http:error-response>
+		</http:listener>
+		<flow-ref doc:name="check-duplicate-message" doc:id="6d50b868-60b8-4e30-8852-5771e630b834" name="check-duplicate-message1" />
+		<ee:transform doc:name="Store the information successfully" doc:id="f9714f47-8835-4b71-8016-35731885880d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "User details stored successfully."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e0ed1dc7-5e40-45cb-848b-fb6cf17e9e64" type="ANY" >
+				<ee:transform doc:name="Prepare Error Payload" doc:id="478678ff-86fe-4569-9151-907792ee1352" >
+					<ee:message >
+						<ee:set-payload resource="dwl/prepareError.dwl" />
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="check-duplicate-message1" doc:id="0782c1d8-1d8e-4f37-9012-9a8550e7171c" >
+		<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;write(payload.email,"application/json")]' doc:name="Set email variable" doc:id="ee782ae3-412c-4522-8786-c0741207135e" variableName="uniqueEmailCheck" mimeType="application/json" />
+		<idempotent-message-validator doc:name="Idempotent Message Validator" doc:id="d7a1f99c-ed3a-4e08-983b-7b262ca24592" idExpression="#[%dw 2.0&#10;&#10;    output text/plain&#10;&#10;    import dw::Crypto&#10;&#10;    ---&#10;&#10;    Crypto::hashWith(vars.uniquePhoneCheck as Binary,'SHA-1')]" objectStore="DuplicateCheckObjectStore" />
+		<remove-variable doc:name="Remove Variable" doc:id="cf9c3d57-3735-4eff-bd21-b39db9b82c8a" variableName="uniquePhoneCheck" />
+	</sub-flow>
+</mule>

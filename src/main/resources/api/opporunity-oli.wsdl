@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+Salesforce.com Outbound Notification Web Services API Version 1.0 
+Generated on 2025-01-29 15:07:52 +0000.
+
+Copyright 2005-2025 Salesforce.com, Inc.
+All Rights Reserved
+-->
+<definitions targetNamespace="http://soap.sforce.com/2005/09/outbound"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://soap.sforce.com/2005/09/outbound"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:ent="urn:enterprise.soap.sforce.com"
+             xmlns:ens="urn:sobject.enterprise.soap.sforce.com">
+    <types>
+
+        <schema elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:enterprise.soap.sforce.com">
+            <!-- Our simple ID Type -->
+            <simpleType name="ID">
+                <restriction base="xsd:string">
+                    <length value="18"/>
+                    <pattern value='[a-zA-Z0-9]{18}'/>
+                </restriction>
+            </simpleType>
+        </schema>
+
+        <schema elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:sobject.enterprise.soap.sforce.com">
+            <import namespace="urn:enterprise.soap.sforce.com" />
+            <!-- Base sObject (abstract) -->
+            <complexType name="sObject">
+                <sequence>
+                    <element name="fieldsToNull"       type="xsd:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+                    <element name="Id"                 type="ent:ID" nillable="true" />
+                </sequence>
+            </complexType>
+
+            <complexType name="AggregateResult">
+                <complexContent>
+                    <extension base="ens:sObject">
+                        <sequence>
+                            <any namespace="##targetNamespace" minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+                        </sequence>
+                    </extension>
+                </complexContent>
+            </complexType>
+
+            <complexType name="OpportunityLineItem">
+                <complexContent>
+                    <extension base="ens:sObject">
+                        <sequence>
+                        <element name="OpportunityId" nillable="true" minOccurs="0" type="ent:ID"/>
+                        <element name="Quantity" nillable="true" minOccurs="0" type="xsd:double"/>
+                        <element name="TotalPrice" nillable="true" minOccurs="0" type="xsd:double"/>
+                        </sequence>
+                    </extension>
+                </complexContent>
+            </complexType>
+
+
+        </schema>
+
+        <schema elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://soap.sforce.com/2005/09/outbound">
+            <import namespace="urn:enterprise.soap.sforce.com" />
+            <import namespace="urn:sobject.enterprise.soap.sforce.com" />
+    
+            <element name="notifications">
+                <complexType> 
+                    <sequence> 
+                    	<element name="OrganizationId" type="ent:ID" />
+                    	<element name="ActionId" type="ent:ID" />
+                    	<element name="SessionId" type="xsd:string" nillable="true" />
+                    	<element name="EnterpriseUrl" type="xsd:string" />
+                    	<element name="PartnerUrl" type="xsd:string" />
+                        <element name="Notification" maxOccurs="100" type="tns:OpportunityLineItemNotification" />
+                    </sequence> 
+                </complexType> 
+            </element>
+    
+            <complexType name="OpportunityLineItemNotification">
+                <sequence>
+                    <element name="Id" type="ent:ID" />
+                    <element name="sObject" type="ens:OpportunityLineItem" />
+                </sequence>
+            </complexType>
+                
+            <element name="notificationsResponse">
+                <complexType>
+                    <sequence>
+                        <element name="Ack" type="xsd:boolean" />
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+    </types>
+    
+    
+    <!-- Method Messages -->   
+    <message name="notificationsRequest">
+        <part element="tns:notifications" name="request"/>
+    </message>
+    <message name="notificationsResponse">
+        <part element="tns:notificationsResponse" name="response"/>
+    </message>
+
+    <!-- PortType -->
+    <portType name="NotificationPort">
+        <operation name="notifications">
+            <documentation>Process a number of notifications.</documentation>
+            <input  message="tns:notificationsRequest"/>
+            <output message="tns:notificationsResponse"/>
+        </operation>
+    </portType>
+    
+    <!-- Binding 
+         You need to write a service that implements this binding to receive the notifications
+     -->
+    <binding name="NotificationBinding" type="tns:NotificationPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        
+        <operation name="notifications">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output> 
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+
+    <!-- Service Endpoint -->
+    <service name="NotificationService">
+        <documentation>Notification Service Implementation</documentation>
+        <port binding="tns:NotificationBinding" name="Notification">
+            <soap:address location="http://test.com"/>
+        </port>
+    </service>
+    
+</definitions>
